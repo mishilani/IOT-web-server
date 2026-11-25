@@ -3,125 +3,195 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IoT 5-Sensor Dashboard</title>
+  <title>ASIA - IoT Console</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: #0f172a; color: #f8fafc; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-    header { text-align: center; margin-bottom: 24px; }
-    header h1 { font-size: 1.6rem; color: #38bdf8; }
-    header p { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; width: 100%; max-width: 820px; }
-    .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-    .card h3 { font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
-    .value { font-size: 1.8rem; font-weight: 700; color: #f8fafc; }
-    .unit { font-size: 1rem; color: #38bdf8; }
-    .sub { font-size: 0.8rem; color: #64748b; margin-top: 6px; }
-    .alert-red { color: #f87171; }
-    .alert-blue { color: #38bdf8; }
-    .status-green { color: #4ade80; }
-    .status-yellow { color: #facc15; }
-    .control-box { margin-top: 24px; width: 100%; max-width: 820px; background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-    button { background: #38bdf8; color: #0f172a; border: none; padding: 12px 24px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
-    button.off { background: #475569; color: #f8fafc; }
+    body { background: #f4f5f7; color: #1f2937; padding: 24px; }
+    .container { max-width: 1120px; margin: 0 auto; }
+
+    /* Top Header matching Blynk Console */
+    .header-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; }
+    .device-info { display: flex; align-items: center; gap: 14px; }
+    .device-icon { width: 44px; height: 44px; border: 2px solid #10b981; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #10b981; font-weight: bold; font-size: 1.2rem; background: #fff; }
+    .device-title { display: flex; align-items: center; gap: 10px; }
+    .device-title h1 { font-size: 1.35rem; font-weight: 700; color: #111827; }
+    .status-badge { font-size: 0.78rem; color: #6b7280; display: flex; align-items: center; gap: 5px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; }
+    .dot.online { background: #10b981; }
+    .sync-text { font-size: 0.8rem; color: #6b7280; }
+
+    .control-btn { background: #10b981; color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
+    .control-btn.off { background: #e5e7eb; color: #374151; }
+
+    /* Top 4 Cards Grid */
+    .top-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 900px) { .top-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) { .top-grid { grid-template-columns: 1fr; } }
+
+    /* Bottom 2 Wide Cards Grid */
+    .bottom-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    @media (max-width: 720px) { .bottom-grid { grid-template-columns: 1fr; } }
+
+    .card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between; }
+    .card-title { font-size: 0.9rem; font-weight: 500; color: #374151; margin-bottom: 12px; }
+
+    /* Arc Gauges */
+    .gauge-wrap { position: relative; width: 170px; height: 125px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+    .gauge-svg { width: 170px; height: 120px; overflow: visible; }
+    .gauge-bg { fill: none; stroke: #e5e7eb; stroke-width: 13; stroke-linecap: round; }
+    .gauge-fill { fill: none; stroke-width: 13; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+    .gauge-val { position: absolute; top: 48px; font-size: 1.55rem; font-weight: 500; color: #111827; }
+    .gauge-val sup { font-size: 0.85rem; color: #6b7280; margin-left: 2px; }
+    .gauge-limits { width: 118px; display: flex; justify-content: space-between; font-size: 0.85rem; color: #374151; margin-top: -12px; }
+
+    /* Motion Circle */
+    .motion-wrap { display: flex; align-items: center; justify-content: center; height: 125px; }
+    .motion-circle { width: 108px; height: 108px; border-radius: 50%; background: #d1d5db; border: 2px solid #4b5563; transition: 0.3s; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; color: #fff; }
+    .motion-circle.active { background: #c026d3; box-shadow: 0 0 18px rgba(192, 38, 211, 0.45); }
+
+    /* Horizontal Bar Widgets (Rain & Distance) */
+    .bar-track { position: relative; width: 100%; height: 125px; border-radius: 4px; overflow: hidden; border: 1px solid #e5e7eb; background: #f3f4f6; }
+    .bar-fill-rain { height: 100%; background: linear-gradient(90deg, #e5e7eb 0%, #64748b 100%); transition: width 0.5s ease; }
+    .bar-fill-dist { height: 100%; background: linear-gradient(90deg, #b45309 0%, #f59e0b 100%); opacity: 0.45; transition: width 0.5s ease; }
+    .bar-marker { position: absolute; top: 0; bottom: 0; width: 2px; background: #111827; transition: left 0.5s ease; }
+    .bar-pill { position: absolute; top: 50%; transform: translate(-50%, -50%); background: #ffffff; border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 14px; font-size: 1.25rem; font-weight: 500; color: #111827; box-shadow: 0 2px 6px rgba(0,0,0,0.08); white-space: nowrap; transition: left 0.5s ease; }
+    .bar-pill sup { font-size: 0.8rem; color: #6b7280; margin-left: 2px; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>IoT 5-Sensor Monitor</h1>
-    <p>Last sync: <span id="lastUpdated">Waiting for device...</span></p>
-  </header>
-
-  <div class="grid">
-    <!-- 1a. DHT22 Temperature -->
-    <div class="card">
-      <h3>Temperature</h3>
-      <div class="value"><span id="temp">--</span> <span class="unit">°C</span></div>
-      <div class="sub">DHT22 Sensor</div>
+  <div class="container">
+    <!-- Top Header -->
+    <div class="header-bar">
+      <div class="device-info">
+        <div class="device-icon">⬡</div>
+        <div>
+          <div class="device-title">
+            <h1>ASIA</h1>
+            <span class="status-badge"><span class="dot" id="statusDot"></span> <span id="statusText">Inactive</span></span>
+          </div>
+          <div class="sync-text">Last update: <span id="lastUpdated">Waiting for device...</span></div>
+        </div>
+      </div>
+      <button id="toggleBtn" class="control-btn off" onclick="toggleLed()">Output: OFF</button>
     </div>
 
-    <!-- 1b. DHT22 Humidity -->
-    <div class="card">
-      <h3>Humidity</h3>
-      <div class="value"><span id="humidity">--</span> <span class="unit">%</span></div>
-      <div class="sub">DHT22 Sensor</div>
+    <!-- Top 4 Cards -->
+    <div class="top-grid">
+      <!-- 1. Temperature (0 to 60°C) -->
+      <div class="card">
+        <div class="card-title">Temperature</div>
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" viewBox="0 0 170 120">
+            <path class="gauge-bg" d="M 32 98 A 58 58 0 1 1 138 98" />
+            <path id="tempArc" class="gauge-fill" stroke="#dc2626" d="M 32 98 A 58 58 0 1 1 138 98" stroke-dasharray="242" stroke-dashoffset="242" />
+          </svg>
+          <div class="gauge-val"><span id="tempVal">--</span><sup>°C</sup></div>
+          <div class="gauge-limits"><span>0</span><span>60</span></div>
+        </div>
+      </div>
+
+      <!-- 2. Humidity (0 to 100%) -->
+      <div class="card">
+        <div class="card-title">Humidity</div>
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" viewBox="0 0 170 120">
+            <path class="gauge-bg" d="M 32 98 A 58 58 0 1 1 138 98" />
+            <path id="humArc" class="gauge-fill" stroke="#bef264" d="M 32 98 A 58 58 0 1 1 138 98" stroke-dasharray="242" stroke-dashoffset="242" />
+          </svg>
+          <div class="gauge-val"><span id="humVal">--</span><sup>%</sup></div>
+          <div class="gauge-limits"><span>0</span><span>100</span></div>
+        </div>
+      </div>
+
+      <!-- 3. Brightness (0 to 100%) -->
+      <div class="card">
+        <div class="card-title">Brightness</div>
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" viewBox="0 0 170 120">
+            <path class="gauge-bg" d="M 32 98 A 58 58 0 1 1 138 98" />
+            <path id="brightArc" class="gauge-fill" stroke="#fde047" d="M 32 98 A 58 58 0 1 1 138 98" stroke-dasharray="242" stroke-dashoffset="242" />
+          </svg>
+          <div class="gauge-val"><span id="brightVal">--</span><sup>%</sup></div>
+          <div class="gauge-limits"><span>0</span><span>100</span></div>
+        </div>
+      </div>
+
+      <!-- 4. Motion Indicator -->
+      <div class="card">
+        <div class="card-title">Motion</div>
+        <div class="motion-wrap">
+          <div class="motion-circle" id="motionCircle">CLEAR</div>
+        </div>
+      </div>
     </div>
 
-    <!-- 2. Raindrop Sensor -->
-    <div class="card">
-      <h3>Rain Status</h3>
-      <div class="value" id="rain">--</div>
-      <div class="sub">Raw ADC: <span id="rainRaw">--</span></div>
-    </div>
+    <!-- Bottom 2 Wide Bar Cards -->
+    <div class="bottom-grid">
+      <!-- 5. Rain (%) -->
+      <div class="card">
+        <div class="card-title">Rain</div>
+        <div class="bar-track">
+          <div class="bar-fill-rain" id="rainFill" style="width: 0%;"></div>
+          <div class="bar-marker" id="rainMarker" style="left: 0%;"></div>
+          <div class="bar-pill" id="rainPill" style="left: 12%;"><span id="rainVal">0</span><sup>%</sup></div>
+        </div>
+      </div>
 
-    <!-- 3. PIR Motion Sensor -->
-    <div class="card">
-      <h3>Motion Sensor</h3>
-      <div class="value" id="motion">--</div>
-      <div class="sub">PIR Detector</div>
+      <!-- 6. Distance (cm, scaled 0 to 100cm) -->
+      <div class="card">
+        <div class="card-title">Distance</div>
+        <div class="bar-track">
+          <div class="bar-fill-dist" id="distFill" style="width: 0%;"></div>
+          <div class="bar-marker" id="distMarker" style="left: 0%;"></div>
+          <div class="bar-pill" id="distPill" style="left: 12%;"><span id="distVal">0</span><sup>cm</sup></div>
+        </div>
+      </div>
     </div>
-
-    <!-- 4. Ultrasonic Sensor -->
-    <div class="card">
-      <h3>Distance / Level</h3>
-      <div class="value"><span id="distance">--</span> <span class="unit">cm</span></div>
-      <div class="sub">HC-SR04 Ultrasonic</div>
-    </div>
-
-    <!-- 5. Light Sensor -->
-    <div class="card">
-      <h3>Ambient Light</h3>
-      <div class="value" id="light">--</div>
-      <div class="sub">Brightness: <span id="lightPercent">--</span>%</div>
-    </div>
-  </div>
-
-  <div class="control-box">
-    <div>
-      <strong>Board Output / Relay</strong>
-      <div class="sub">Status: <span id="ledText">OFF</span></div>
-    </div>
-    <button id="toggleBtn" class="off" onclick="toggleLed()">Turn ON</button>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
     let currentLed = false;
+    const ARC_LENGTH = 242;
+
+    function setArc(id, value, min, max) {
+      const clamped = Math.max(min, Math.min(max, Number(value) || 0));
+      const pct = (clamped - min) / (max - min);
+      document.getElementById(id).style.strokeDashoffset = ARC_LENGTH * (1 - pct);
+    }
 
     socket.on('state-update', (state) => {
       currentLed = state.led;
-      document.getElementById('temp').innerText = state.temp;
-      document.getElementById('humidity').innerText = state.humidity;
-      document.getElementById('rainRaw').innerText = state.rainRaw;
-      document.getElementById('distance').innerText = state.distance;
-      document.getElementById('lightPercent').innerText = state.lightPercent;
       document.getElementById('lastUpdated').innerText = state.lastUpdated;
 
-      // Rain styling
-      const rainEl = document.getElementById('rain');
-      rainEl.innerText = state.rain;
-      rainEl.className = 'value ' + (state.rain === 'Raining' ? 'alert-blue' : 'status-green');
+      if (state.online) {
+        document.getElementById('statusDot').classList.add('online');
+        document.getElementById('statusText').innerText = 'Online';
+      }
 
-      // Motion styling
-      const motionEl = document.getElementById('motion');
-      motionEl.innerText = state.motion ? 'Detected' : 'Clear';
-      motionEl.className = 'value ' + (state.motion ? 'alert-red' : 'status-green');
+      // 1. Temperature (0-60)
+      document.getElementById('tempVal').innerText = state.temp;
+      setArc('tempArc', state.temp, 0, 60);
 
-      // Light styling
-      const lightEl = document.getElementById('light');
-      lightEl.innerText = state.light;
-      lightEl.className = 'value ' + (state.light === 'Bright' ? 'status-yellow' : 'alert-blue');
+      // 2. Humidity (0-100)
+      document.getElementById('humVal').innerText = state.humidity;
+      setArc('humArc', state.humidity, 0, 100);
 
-      // Toggle button
-      const btn = document.getElementById('toggleBtn');
-      document.getElementById('ledText').innerText = state.led ? 'ON' : 'OFF';
-      btn.innerText = state.led ? 'Turn OFF' : 'Turn ON';
-      btn.className = state.led ? '' : 'off';
-    });
+      // 3. Brightness (0-100)
+      document.getElementById('brightVal').innerText = state.brightness;
+      setArc('brightArc', state.brightness, 0, 100);
 
-    function toggleLed() {
-      socket.emit('toggle-led', !currentLed);
-    }
-  </script>
-</body>
-</html>
+      // 4. Motion
+      const mCircle = document.getElementById('motionCircle');
+      if (state.motion) {
+        mCircle.classList.add('active');
+        mCircle.innerText = 'MOTION';
+      } else {
+        mCircle.classList.remove('active');
+        mCircle.innerText = 'CLEAR';
+      }
+
+      // 5. Rain (0-100%)
+      const rainPct = Math.max(0, Math.min(100, Number(state.rainPercent) || 0));
+      document.getElementById('rainVal').innerText = rainPct;
