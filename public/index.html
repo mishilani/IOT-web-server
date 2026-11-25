@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>IoT Control Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+    button { padding: 15px 30px; font-size: 18px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>IoT Web Dashboard</h1>
+  <p>Temperature: <strong id="temp">--</strong> °C</p>
+  <p>Device Status: <strong id="status">OFF</strong></p>
+  <button onclick="toggle()">Toggle LED</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let currentLed = false;
+
+    socket.on('state-update', (state) => {
+      currentLed = state.led;
+      document.getElementById('temp').innerText = state.temp;
+      document.getElementById('status').innerText = state.led ? 'ON' : 'OFF';
+    });
+
+    function toggle() {
+      socket.emit('toggle-led', !currentLed);
+    }
+  </script>
+</body>
+</html>
