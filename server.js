@@ -13,27 +13,26 @@ app.use(express.static(path.join(__dirname, 'public')));
 let deviceState = {
   temp: 0,
   humidity: 0,
-  rain: "Dry",
-  rainRaw: 4095,
+  brightness: 0,
   motion: false,
+  rainPercent: 0,
   distance: 0,
-  light: "Bright",
-  lightPercent: 0,
   led: false,
+  online: false,
   lastUpdated: "Waiting for device..."
 };
 
 app.post('/api/iot', (req, res) => {
-  const { temp, humidity, rain, rainRaw, motion, distance, light, lightPercent } = req.body;
+  const { temp, humidity, brightness, motion, rainPercent, distance } = req.body;
 
   if (temp !== undefined) deviceState.temp = temp;
   if (humidity !== undefined) deviceState.humidity = humidity;
-  if (rain !== undefined) deviceState.rain = rain;
-  if (rainRaw !== undefined) deviceState.rainRaw = rainRaw;
+  if (brightness !== undefined) deviceState.brightness = brightness;
   if (motion !== undefined) deviceState.motion = motion;
+  if (rainPercent !== undefined) deviceState.rainPercent = rainPercent;
   if (distance !== undefined) deviceState.distance = distance;
-  if (light !== undefined) deviceState.light = light;
-  if (lightPercent !== undefined) deviceState.lightPercent = lightPercent;
+
+  deviceState.online = true;
   deviceState.lastUpdated = new Date().toLocaleTimeString();
 
   io.emit('state-update', deviceState);
