@@ -10,16 +10,36 @@ const io = new Server(server);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-let deviceState = { led: false, temp: 0 };
+let deviceState = {
+  temp: 0,
+  humidity: 0,
+  rain: "Dry",
+  rainRaw: 4095,
+  motion: false,
+  distance: 0,
+  light: "Bright",
+  lightPercent: 0,
+  led: false,
+  lastUpdated: "Waiting for device..."
+};
 
-// Endpoint for ESP32/ESP8266 to send sensor data & check commands
 app.post('/api/iot', (req, res) => {
-  if (req.body.temp !== undefined) deviceState.temp = req.body.temp;
-  io.emit('state-update', deviceState); // Push live update to web dashboard
-  res.json(deviceState); // Reply to microcontroller with latest LED state
+  const { temp, humidity, rain, rainRaw, motion, distance, light, lightPercent } = req.body;
+
+  if (temp !== undefined) deviceState.temp = temp;
+  if (humidity !== undefined) deviceState.humidity = humidity;
+  if (rain !== undefined) deviceState.rain = rain;
+  if (rainRaw !== undefined) deviceState.rainRaw = rainRaw;
+  if (motion !== undefined) deviceState.motion = motion;
+  if (distance !== undefined) deviceState.distance = distance;
+  if (light !== undefined) deviceState.light = light;
+  if (lightPercent !== undefined) deviceState.lightPercent = lightPercent;
+  deviceState.lastUpdated = new Date().toLocaleTimeString();
+
+  io.emit('state-update', deviceState);
+  res.json({ led: deviceState.led });
 });
 
-// Web dashboard real-time controls
 io.on('connection', (socket) => {
   socket.emit('state-update', deviceState);
 
