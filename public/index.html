@@ -161,13 +161,37 @@
       document.getElementById(id).style.strokeDashoffset = ARC_LENGTH * (1 - pct);
     }
 
+    // Keep the value pill inside the bar so it never gets cut off
+    function pillLeft(pct) {
+      return Math.max(12, Math.min(88, pct));
+    }
+
+    function updateButton() {
+      const btn = document.getElementById('toggleBtn');
+      btn.innerText = currentLed ? 'Output: ON' : 'Output: OFF';
+      btn.classList.toggle('off', !currentLed);
+    }
+
+    function toggleLed() {
+      currentLed = !currentLed;
+      socket.emit('toggle-led', currentLed);
+      updateButton();
+    }
+
     socket.on('state-update', (state) => {
       currentLed = state.led;
+      updateButton();
       document.getElementById('lastUpdated').innerText = state.lastUpdated;
 
+      // Online / Inactive badge
+      const dot = document.getElementById('statusDot');
+      const txt = document.getElementById('statusText');
       if (state.online) {
-        document.getElementById('statusDot').classList.add('online');
-        document.getElementById('statusText').innerText = 'Online';
+        dot.classList.add('online');
+        txt.innerText = 'Online';
+      } else {
+        dot.classList.remove('online');
+        txt.innerText = 'Inactive';
       }
 
       // 1. Temperature (0-60)
@@ -195,3 +219,18 @@
       // 5. Rain (0-100%)
       const rainPct = Math.max(0, Math.min(100, Number(state.rainPercent) || 0));
       document.getElementById('rainVal').innerText = rainPct;
+      document.getElementById('rainFill').style.width = rainPct + '%';
+      document.getElementById('rainMarker').style.left = rainPct + '%';
+      document.getElementById('rainPill').style.left = pillLeft(rainPct) + '%';
+
+      // 6. Distance (cm, bar scaled 0-100 cm)
+      const dist = Math.max(0, Number(state.distance) || 0);
+      const distPct = Math.min(100, dist);
+      document.getElementById('distVal').innerText = dist;
+      document.getElementById('distFill').style.width = distPct + '%';
+      document.getElementById('distMarker').style.left = distPct + '%';
+      document.getElementById('distPill').style.left = pillLeft(distPct) + '%';
+    });
+  </script>
+</body>
+</html>
