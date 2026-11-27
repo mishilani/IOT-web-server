@@ -22,22 +22,36 @@ let deviceState = {
   lastUpdated: "Waiting for device..."
 };
 
+let lastSeen = 0;
+
 app.post('/api/iot', (req, res) => {
-  const { temp, humidity, brightness, motion, rainPercent, distance } = req.body;
+  const b = req.body;
+  const temp = b.temp ?? b.temperature;
+  const rainPercent = b.rainPercent ?? b.rain;
+  const { humidity, brightness, motion, distance } = b;
 
   if (temp !== undefined) deviceState.temp = temp;
   if (humidity !== undefined) deviceState.humidity = humidity;
   if (brightness !== undefined) deviceState.brightness = brightness;
-  if (motion !== undefined) deviceState.motion = motion;
+  if (motion !== undefined) deviceState.motion = Boolean(motion);
   if (rainPercent !== undefined) deviceState.rainPercent = rainPercent;
   if (distance !== undefined) deviceState.distance = distance;
 
   deviceState.online = true;
-  deviceState.lastUpdated = new Date().toLocaleTimeString();
+  lastSeen = Date.now();
+  deviceState.lastUpdated = new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Manila' });
 
   io.emit('state-update', deviceState);
   res.json({ led: deviceState.led });
 });
+
+// Mark offline if the board stops posting (it posts every 15 s)
+setInterval(() => {
+  if (deviceState.online && Date.now() - lastSeen > 45000) {
+    deviceState.online = false;
+    io.emit('state-update', deviceState);
+  }
+}, 5000);
 
 io.on('connection', (socket) => {
   socket.emit('state-update', deviceState);
@@ -46,6 +60,10 @@ io.on('connection', (socket) => {
     deviceState.led = status;
     io.emit('state-update', deviceState);
   });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 });
 
 const PORT = process.env.PORT || 3000;
