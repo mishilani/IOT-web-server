@@ -26,8 +26,8 @@ let lastSeen = 0;
 
 app.post('/api/iot', (req, res) => {
   const b = req.body;
-  const temp = b.temp ?? b.temperature;
-  const rainPercent = b.rainPercent ?? b.rain;
+  const temp = b.temp !== undefined ? b.temp : b.temperature;
+  const rainPercent = b.rainPercent !== undefined ? b.rainPercent : b.rain;
   const { humidity, brightness, motion, distance } = b;
 
   if (temp !== undefined) deviceState.temp = temp;
@@ -60,10 +60,6 @@ io.on('connection', (socket) => {
     deviceState.led = status;
     io.emit('state-update', deviceState);
   });
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 });
 
 const PORT = process.env.PORT || 3000;
